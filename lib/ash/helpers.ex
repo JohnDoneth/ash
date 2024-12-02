@@ -298,6 +298,14 @@ defmodule Ash.Helpers do
     end
   end
 
+  def unwrap_one_if(result, condition) do
+    if condition do
+      unwrap_one(result)
+    else
+      result
+    end
+  end
+
   def unwrap_one({:error, error}) do
     {:error, error}
   end

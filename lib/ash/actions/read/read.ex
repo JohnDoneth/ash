@@ -20,8 +20,9 @@ defmodule Ash.Actions.Read do
   end
 
   @spec run(Ash.Query.t(), Ash.Resource.Actions.action(), Keyword.t()) ::
-          {:ok, Ash.Page.page() | list(Ash.Resource.record())}
-          | {:ok, Ash.Page.page() | list(Ash.Resource.record()), Ash.Query.t()}
+          {:ok, Ash.Page.page() | Ash.Resource.record() | list(Ash.Resource.record())}
+          | {:ok, Ash.Page.page() | Ash.Resource.record() | list(Ash.Resource.record()),
+             Ash.Query.t()}
           | {:error, term}
   def run(query, action, opts \\ [])
 
@@ -383,6 +384,7 @@ defmodule Ash.Actions.Read do
           opts
         )
         |> add_query(query, opts)
+        |> handle_get_unwrap(query.action)
       else
         {:error, %Ash.Query{errors: errors} = query} ->
           {:error, Ash.Error.to_error_class(errors, query: query)}
@@ -1827,6 +1829,20 @@ defmodule Ash.Actions.Read do
       {:ok, result}
     end
   end
+
+  defp handle_get_unwrap({:ok, result}, action) do
+    if action[:get?] do
+      case result do
+        [] -> {:ok, nil}
+        [record] -> {:ok, record}
+        [record | _] -> {:ok, record}
+      end
+    else
+      {:ok, result}
+    end
+  end
+
+  defp handle_get_unwrap(other, _action), do: other
 
   @doc false
   def add_page(data, action, count, sort, original_query, opts) do
